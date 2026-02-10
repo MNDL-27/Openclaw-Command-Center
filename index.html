@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Dashboard </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-emoji"></span>
+                <span class="logo-text">OpenClaw Dashboard</span>
+            </div>
+            <nav class="nav">
+                <a href="#" class="nav-item active" data-panel="overview">
+                    <span class="nav-icon">📊</span>
+                    <span>Overview</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="agents">
+                    <span class="nav-icon">🤖</span>
+                    <span>Agents</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="sessions">
+                    <span class="nav-icon">💬</span>
+                    <span>Sessions</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="cron">
+                    <span class="nav-icon">⏰</span>
+                    <span>Cron Jobs</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="activity">
+                    <span class="nav-icon">📜</span>
+                    <span>Activity Feed</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="usage">
+                    <span class="nav-icon">📈</span>
+                    <span>Usage</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="schedule">
+                    <span class="nav-icon">🌙</span>
+                    <span>Schedule</span>
+                </a>
+                <a href="#" class="nav-item" data-panel="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot" id="gateway-status"></span>
+                    <span id="gateway-status-text">Checking...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-title">
+                    <h1 id="panel-title">Overview</h1>
+                    <p class="header-subtitle" id="panel-subtitle">Multi-agent monitoring dashboard</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="refreshAll()">
+                        <span>🔄</span> Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="showSpawnModal()">
+                        <span>➕</span> Spawn Agent
+                    </button>
+                </div>
+            </header>
+
+            <!-- Overview Panel -->
+            <div class="panel active" id="panel-overview">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🤖</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-agents">-</div>
+                            <div class="stat-label">Agents</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-sessions">-</div>
+                            <div class="stat-label">Active Sessions</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏰</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-cron">-</div>
+                            <div class="stat-label">Cron Jobs</div>
+                        </div>
+                    </div>
+                    <div class="stat-card schedule-card">
+                        <div class="stat-icon">🌙</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-schedule">-</div>
+                            <div class="stat-label">Until Schedule</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick View Grid -->
+                <div class="grid-2">
+                    <!-- Recent Activity -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📜 Recent Activity</h3>
+                            <a href="#" class="card-link" onclick="showPanel('activity')">View all →</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="activity-list" id="recent-activity">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agent Status -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🤖 Agent Status</h3>
+                            <a href="#" class="card-link" onclick="showPanel('agents')">Manage →</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="agent-list" id="agent-status">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Cron Jobs -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⏰ Upcoming Jobs</h3>
+                        <a href="#" class="card-link" onclick="showPanel('cron')">View all →</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="cron-list" id="upcoming-cron">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agents Panel -->
+            <div class="panel" id="panel-agents">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🤖 Registered Agents</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="agents-grid" id="agents-grid">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sessions Panel -->
+            <div class="panel" id="panel-sessions">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>💬 Active Sessions</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="loadSessions()">🔄 Refresh</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="sessions-list" id="sessions-list">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cron Panel -->
+            <div class="panel" id="panel-cron">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⏰ Scheduled Jobs</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="loadCronJobs()">🔄 Refresh</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="cron-jobs-list" id="cron-jobs-list">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Feed Panel -->
+            <div class="panel" id="panel-activity">
+                <div class="card full-height">
+                    <div class="card-header">
+                        <h3>📜 Activity Feed</h3>
+                        <div class="header-actions">
+                            <label class="toggle">
+                                <input type="checkbox" id="auto-refresh" checked>
+                                <span>Auto-refresh</span>
+                            </label>
+                            <button class="btn btn-secondary btn-sm" onclick="loadActivity()">🔄 Refresh</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="activity-feed" id="activity-feed">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usage Panel -->
+            <div class="panel" id="panel-usage">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📈 API Usage</h3>
+                        <div class="header-actions">
+                            <select id="usage-provider-filter" onchange="filterUsage()" style="padding:6px 10px;border-radius:6px;background:#1e293b;color:#e6eef8;border:1px solid #334155;">
+                                <option value="all">All Providers</option>
+                            </select>
+                            <button class="btn btn-secondary btn-sm" onclick="loadUsage()">🔄 Refresh</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Summary Stats -->
+                        <div class="stats-grid" style="margin-bottom:20px;">
+                            <div class="stat-card">
+                                <div class="stat-icon">📊</div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="usage-total-requests">-</div>
+                                    <div class="stat-label">Total Requests</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">🔌</div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="usage-providers-count">-</div>
+                                    <div class="stat-label">Providers</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">🤖</div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="usage-models-count">-</div>
+                                    <div class="stat-label">Models/Endpoints</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Billing Section -->
+                        <div class="card" style="margin-bottom:20px;padding:16px;border:1px solid #334155;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                                <h4 style="margin:0;">💰 Billing & Costs (Month-to-Date)</h4>
+                                <button class="btn btn-secondary btn-sm" onclick="loadPollers()">🔄 Sync Now</button>
+                            </div>
+                            <div id="billing-pollers-list" class="grid-2" style="gap:12px;">
+                                <div class="loading">Loading billing data...</div>
+                            </div>
+                        </div>
+
+                        <!-- Ollama Section -->
+                        <div class="card" style="margin-bottom:20px;padding:16px;background:#1a1f2e;border:1px solid #334155;">
+                            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                                <img src="https://ollama.com/public/ollama.png" alt="Ollama" style="width:32px;height:32px;border-radius:6px;" onerror="this.style.display='none'">
+                                <h4 style="margin:0;">Ollama</h4>
+                                <span id="ollama-local-status" class="status-badge" style="margin-left:auto;">Checking...</span>
+                            </div>
+                            <div class="grid-2" style="gap:16px;">
+                                <!-- Cloud Usage -->
+                                <div style="background:#0f1724;padding:12px;border-radius:8px;">
+                                    <h5 style="margin:0 0 12px;color:#9fb0c8;">☁️ Cloud Usage</h5>
+                                    <div style="display:flex;flex-direction:column;gap:8px;">
+                                        <div>
+                                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                                <span style="color:#9fb0c8;font-size:13px;">Session</span>
+                                                <span id="ollama-session-usage" style="font-weight:600;">-</span>
+                                            </div>
+                                            <div style="height:6px;background:#1e293b;border-radius:3px;overflow:hidden;">
+                                                <div id="ollama-session-bar" style="height:100%;background:#0ea5a1;width:0%;transition:width 0.3s;"></div>
+                                            </div>
+                                            <div id="ollama-session-reset" style="font-size:11px;color:#64748b;margin-top:2px;">-</div>
+                                        </div>
+                                        <div>
+                                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                                <span style="color:#9fb0c8;font-size:13px;">Weekly</span>
+                                                <span id="ollama-weekly-usage" style="font-weight:600;">-</span>
+                                            </div>
+                                            <div style="height:6px;background:#1e293b;border-radius:3px;overflow:hidden;">
+                                                <div id="ollama-weekly-bar" style="height:100%;background:#6366f1;width:0%;transition:width 0.3s;"></div>
+                                            </div>
+                                            <div id="ollama-weekly-reset" style="font-size:11px;color:#64748b;margin-top:2px;">-</div>
+                                        </div>
+                                        <button class="btn btn-secondary btn-sm" onclick="showOllamaUpdateModal()" style="margin-top:8px;">Update Cloud Usage</button>
+                                    </div>
+                                </div>
+                                <!-- Local Models -->
+                                <div style="background:#0f1724;padding:12px;border-radius:8px;">
+                                    <h5 style="margin:0 0 12px;color:#9fb0c8;">💻 Local Models</h5>
+                                    <div id="ollama-local-models" style="max-height:150px;overflow:auto;font-size:13px;">
+                                        <div class="loading">Checking...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart -->
+                        <div class="card" style="margin-bottom:20px;padding:16px;">
+                            <h4 style="margin:0 0 12px;">Requests by Provider</h4>
+                            <div id="usage-chart" style="height:200px;display:flex;align-items:flex-end;gap:8px;"></div>
+                        </div>
+
+                        <!-- Per-Provider Breakdown -->
+                        <div class="grid-2" id="usage-providers-grid">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Events -->
+                <div class="card" style="margin-top:20px;">
+                    <div class="card-header">
+                        <h3>🕐 Recent Events</h3>
+                        <div class="header-actions">
+                            <input type="text" id="usage-search" placeholder="Filter events..." onkeyup="filterUsageEvents()" style="padding:6px 10px;border-radius:6px;background:#1e293b;color:#e6eef8;border:1px solid #334155;width:200px;">
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="activity-feed" id="usage-events" style="max-height:400px;overflow:auto;">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ollama Update Modal -->
+            <div class="modal" id="ollama-modal">
+                <div class="modal-backdrop" onclick="hideOllamaModal()"></div>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>☁️ Update Ollama Cloud Usage</h2>
+                        <button class="modal-close" onclick="hideOllamaModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="color:#9fb0c8;margin-bottom:16px;">Enter your current Ollama cloud usage from <a href="https://ollama.com/settings" target="_blank" style="color:#0ea5a1;">ollama.com/settings</a></p>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Session Usage (%)</label>
+                                <input type="number" id="ollama-input-session" min="0" max="100" placeholder="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Session Resets In</label>
+                                <input type="text" id="ollama-input-session-reset" placeholder="3 hours">
+                            </div>
+                            <div class="form-group">
+                                <label>Weekly Usage (%)</label>
+                                <input type="number" id="ollama-input-weekly" min="0" max="100" step="0.1" placeholder="53.9">
+                            </div>
+                            <div class="form-group">
+                                <label>Weekly Resets In</label>
+                                <input type="text" id="ollama-input-weekly-reset" placeholder="6 days">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="hideOllamaModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveOllamaUsage()">💾 Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Panel -->
+            <div class="panel" id="panel-schedule">
+                <div class="schedule-hero">
+                    <div class="schedule-countdown">
+                        <div class="countdown-label">Next Schedule in</div>
+                        <div class="countdown-value" id="schedule-countdown">--:--:--</div>
+                        <div class="countdown-date" id="schedule-next-date">-</div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📝 Recent Blog Posts</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="blog-posts">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📚 Learning Notes</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="learning-notes">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🌙 Schedule History</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="schedule-history">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div class="panel" id="panel-settings">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⚙️ Dashboard Settings</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Hashnode API Key</label>
+                                <input type="text" id="settings-hashnode-key" placeholder="a2dfb5...">
+                            </div>
+                            <div class="form-group">
+                                <label>Hashnode URL</label>
+                                <input type="text" id="settings-hashnode-url" placeholder="https://blog.example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Publication ID</label>
+                                <input type="text" id="settings-publication-id" placeholder="698575fa7de63711646068b8">
+                            </div>
+                            <div class="form-group">
+                                <label>Schedule Hour (0-23)</label>
+                                <input type="number" id="settings-schedule-hour" min="0" max="23">
+                            </div>
+                            <div class="form-group">
+                                <label>Notes Path (workspace)</label>
+                                <input type="text" id="settings-notes-path" placeholder="/home/protik/.openclaw/workspace/LEARNING_NOTES.md">
+                            </div>
+                            <div class="form-group full">
+                                <label>Fallback RSS Feeds (one per line)</label>
+                                <textarea id="settings-rss-feeds" placeholder="https://blog.example.com/rss.xml"></textarea>
+                            </div>
+                        </div>
+
+                            <div class="form-group full">
+                                <label>Provider API Keys (JSON)</label>
+                                <textarea id="settings-providers-json" placeholder='{"OpenAI": { "api_key": null }}' style="height:160px;font-family:monospace; width:100%;"></textarea>
+                                <div class="muted" style="font-size:12px;margin-top:6px;">Edit provider api_key values here as JSON. Example: {"OpenAI": {"api_key":"sk-..."}}</div>
+                            </div>
+
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-secondary" onclick="loadSettings(true)">Reset</button>
+                        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Spawn Modal -->
+    <div class="modal" id="spawn-modal">
+        <div class="modal-backdrop" onclick="hideSpawnModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Spawn Agent</h2>
+                <button class="modal-close" onclick="hideSpawnModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Agent</label>
+                    <select id="spawn-agent">
+                        <option value="blog-publisher">📝 Blog Publisher</option>
+                        <option value="research-scraper">🔍 Research Scraper</option>
+                        <option value="inbox-checker">📬 Inbox Checker</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Task</label>
+                    <textarea id="spawn-task" placeholder="Describe what the agent should do..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideSpawnModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="spawnAgent()">🚀 Spawn</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Details Modal -->
+    <div class="modal" id="agent-details-modal">
+        <div class="modal-backdrop" onclick="hideAgentDetailsModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="agent-details-title">🤖 Agent Details</h2>
+                <button class="modal-close" onclick="hideAgentDetailsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="agent-hero" style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
+                    <div class="agent-emoji" id="agent-details-emoji" style="font-size:32px">🤖</div>
+                    <div class="agent-meta">
+                        <div id="agent-details-id">ID: -</div>
+                        <div id="agent-details-model">Model: -</div>
+                        <div id="agent-details-workspace">Workspace: -</div>
+                    </div>
+                </div>
+
+                <div class="agent-tabs">
+                    <nav class="agent-tab-nav" style="display:flex;gap:8px;margin-bottom:12px;">
+                        <button class="tab-btn active" data-tab="overview" onclick="switchAgentTab('overview')">Overview</button>
+                        <button class="tab-btn" data-tab="notes" onclick="switchAgentTab('notes')">Notes</button>
+                        <button class="tab-btn" data-tab="memory" onclick="switchAgentTab('memory')">Memory</button>
+                        <button class="tab-btn" data-tab="logs" onclick="switchAgentTab('logs')">Logs</button>
+                        <button class="tab-btn" data-tab="sessions" onclick="switchAgentTab('sessions')">Sessions</button>
+                    </nav>
+
+                    <div class="agent-tab-content" id="agent-tab-overview" style="display:block;">
+                        <div class="agent-stats" style="margin-bottom:12px;">
+                            <div>Status: <span id="agent-details-status">-</span></div>
+                            <div>Last Active: <span id="agent-details-last">-</span></div>
+                            <div>Active Sessions: <span id="agent-details-sessions-count">0</span></div>
+                        </div>
+                        <div id="agent-details-overview-extra"></div>
+                    </div>
+
+                    <div class="agent-tab-content" id="agent-tab-notes" style="display:none;">
+                        <div id="agent-details-notes-list"><div class="loading">Loading...</div></div>
+
+                        <div id="agent-note-view" style="display:none; margin-top:12px;">
+                            <button class="btn btn-secondary btn-sm" onclick="closeAgentNoteView()">← Back to notes</button>
+                            <h4 id="agent-note-title" style="margin-top:8px;"></h4>
+                            <pre id="agent-note-content" style="white-space:pre-wrap; background:#f7f7f7; padding:8px; border-radius:4px; max-height:360px; overflow:auto;"></pre>
+                        </div>
+                    </div>
+
+                    <div class="agent-tab-content" id="agent-tab-memory" style="display:none;">
+                        <div id="agent-details-memory-list"><div class="loading">Loading...</div></div>
+                    </div>
+
+                    <div class="agent-tab-content" id="agent-tab-logs" style="display:none;">
+                        <div style="margin-bottom:8px;">
+                            <button class="btn btn-secondary btn-sm" onclick="loadAgentLogs()">Refresh Logs</button>
+                        </div>
+                        <pre id="agent-details-logs-content" style="height:240px; overflow:auto; background:#111; color:#eee; padding:8px; border-radius:4px;"></pre>
+                    </div>
+
+                    <div class="agent-tab-content" id="agent-tab-sessions" style="display:none;">
+                        <div id="agent-details-sessions-list"><div class="loading">Loading...</div></div>
+                        <div id="agent-session-detail" style="margin-top:12px; background:#fff; padding:8px; border-radius:4px; max-height:320px; overflow:auto;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideAgentDetailsModal()">Close</button>
+                <button class="btn btn-secondary" onclick="quickSpawnAgentFromModal()">🚀 Quick Spawn</button>
+                <button class="btn btn-primary" onclick="openSpawnForAgent()">Spawn with Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="app.js?v=4"></script>
+</body>
+</html>

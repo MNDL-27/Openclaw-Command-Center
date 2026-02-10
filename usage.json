@@ -1,0 +1,35 @@
+{
+  "total_requests": 1502,
+  "Gateway": {
+    "models": {
+      "sessions": {
+        "requests": 741,
+        "last": 1770722200
+      },
+      "health": {
+        "requests": 374,
+        "last": 1770722196
+      },
+      "cron": {
+        "requests": 375,
+        "last": 1770722196
+      }
+    }
+  },
+  "openclaw": {
+    "models": {
+      "sessions": {
+        "requests": 6,
+        "last": 1770669711
+      },
+      "cron": {
+        "requests": 3,
+        "last": 1770669703
+      },
+      "health": {
+        "requests": 3,
+        "last": 1770669703
+      }
+    }
+  }
+}

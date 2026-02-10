@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OpenClaw Dashboard — Usage & Billing</title>
+  <style>
+    body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:0;background:#0f1724;color:#e6eef8}
+    .container{max-width:1100px;margin:24px auto;padding:20px}
+    h1{margin:0 0 12px}
+    pre{background:#071025;padding:12px;border-radius:8px;overflow:auto}
+    .grid{display:flex;gap:12px;flex-wrap:wrap}
+    .card{background:#081225;padding:12px;border-radius:8px;flex:1 1 240px;min-width:240px;border:1px solid #1e293b}
+    table{width:100%;border-collapse:collapse}
+    td,th{padding:8px 12px;text-align:left;border-bottom:1px solid #1e293b}
+    th{color:#9fb0c8;font-weight:500;font-size:13px;text-transform:uppercase}
+    .muted{color:#9fb0c8;font-size:13px}
+    .events{max-height:300px;overflow:auto;font-size:13px;font-family:monospace}
+    .btn{background:#3b82f6;color:#ffffff;padding:6px 12px;border-radius:6px;border:none;cursor:pointer;font-size:13px;transition:background 0.2s}
+    .btn:hover{background:#2563eb}
+    .btn-sm{padding:4px 8px;font-size:12px}
+    .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+    .status-ok{background:#10b981}
+    .status-err{background:#ef4444}
+    .status-disabled{background:#6b7280}
+    .cost-val{font-weight:600;color:#10b981}
+    .error-msg{color:#ef4444;font-size:12px;display:block;margin-top:4px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Usage & Billing</h1>
+    <p class="muted">Real-time usage tracking and billing estimates from provider APIs.</p>
+
+    <div style="margin:16px 0;display:flex;align-items:center;gap:12px">
+      <button class="btn" onclick="loadAll()">Refresh All</button>
+      <span id="lastsync" class="muted"></span>
+    </div>
+
+    <!-- Billing Pollers Section -->
+    <div class="card" style="margin-bottom:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0">Provider Billing (Monthly Estimate)</h3>
+        <span class="muted" style="font-size:12px">Refreshes every 6h</span>
+      </div>
+      <table id="pollers-table">
+        <thead>
+          <tr>
+            <th>Provider</th>
+            <th>Status</th>
+            <th>Month-to-Date Cost</th>
+            <th>Last Check</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="5" class="muted" style="text-align:center">Loading pollers...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid">
+      <div class="card" style="flex:2">
+        <h3>Internal Usage Summary</h3>
+        <pre id="summary" style="font-size:12px;max-height:300px">Loading…</pre>
+      </div>
+      <div class="card">
+        <h3>Request Counts</h3>
+        <table id="totals"><thead><tr><th>Provider</th><th>Models</th><th>Reqs</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div style="margin-top:18px" class="card">
+      <h3>Recent Events (Log)</h3>
+      <div class="events"><pre id="events">Loading…</pre></div>
+    </div>
+  </div>
+
+  <script>
+    async function loadPollers() {
+      try {
+        const res = await fetch('/proxy/pollers/status');
+        const data = await res.json();
+        const tbody = document.querySelector('#pollers-table tbody');
+        tbody.innerHTML = '';
+        
+        if (!data.pollers || data.pollers.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center">No pollers configured.</td></tr>';
+          return;
+        }
+
+        data.pollers.forEach(p => {
+          const tr = document.createElement('tr');
+          
+          // Status dot
+          let statusClass = 'status-disabled';
+          let statusText = 'Disabled';
+          if (p.enabled) {
+            statusClass = p.last_error ? 'status-err' : 'status-ok';
+            statusText = p.last_error ? 'Error' : 'Active';
+          }
+
+          // Cost formatting
+          let costDisplay = '—';
+          if (p.latest_cost_usd !== null && p.latest_cost_usd !== undefined) {
+            if (p.provider === 'Context7') {
+              // Special handling for Context7
+              // Check latest_meta or latest_tokens
+              let used = p.latest_tokens || 0;
+              let limit = p.latest_meta?.limit || 1000;
+              costDisplay = `${used} / ${limit} Reqs`;
+            } else {
+              costDisplay = `$${parseFloat(p.latest_cost_usd).toFixed(2)}`;
+            }
+          } else if (p.provider === 'Context7' && p.enabled) {
+              costDisplay = 'Waiting for run...';
+          }
+
+          // Last run time
+          let lastRun = 'Never';
+          if (p.last_run > 0) {
+            const date = new Date(p.last_run * 1000);
+            lastRun = date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
+          }
+
+          // Error message
+          let errorHtml = '';
+          if (p.last_error) {
+            errorHtml = `<span class="error-msg" title="${p.last_error}">${p.last_error.substring(0, 50)}${p.last_error.length>50?'...':''}</span>`;
+          }
+
+          tr.innerHTML = `
+            <td><strong>${p.provider}</strong></td>
+            <td><span class="status-dot ${statusClass}"></span>${statusText}</td>
+            <td id="cost-${p.provider}"><span class="cost-val">${costDisplay}</span>${errorHtml}</td>
+            <td class="muted">${lastRun}</td>
+            <td>
+              <button class="btn btn-sm" onclick="runPoller('${p.provider}')" ${!p.enabled ? 'disabled style="opacity:0.5"' : ''}>
+                Check Now
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Failed to load pollers:', err);
+      }
+    }
+
+    async function runPoller(provider) {
+      if (!confirm(`Run manual billing check for ${provider}? This may take a few seconds.`)) return;
+      try {
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = 'Checking...';
+        btn.disabled = true;
+
+        const res = await fetch('/proxy/pollers/run', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({provider})
+        });
+        const result = await res.json();
+        
+        if (result.status === 'success') {
+          if (provider === 'Context7') {
+            const used = result.data.tokens || 0;
+            const limit = result.data.meta?.limit || 1000;
+            const remaining = result.data.meta?.remaining || (limit - used);
+            alert(`Context7 Usage:\nUsed: ${used} / ${limit}\nRemaining: ${remaining}`);
+          } else {
+            alert(`Success! Cost: $${result.data.cost_usd}`);
+          }
+          loadPollers(); // Refresh table
+        } else {
+          alert(`Error: ${result.error || 'Unknown error'}`);
+        }
+      } catch (err) {
+        alert('Request failed: ' + err);
+      } finally {
+        loadPollers();
+      }
+    }
+
+    async function loadUsage() {
+      try {
+        const res = await fetch('/proxy/usage');
+        const data = await res.json();
+        document.getElementById('summary').textContent = JSON.stringify(data.summary, null, 2);
+        
+        const tbody = document.querySelector('#totals tbody'); 
+        tbody.innerHTML='';
+        let total = data.summary && data.summary.total_requests ? data.summary.total_requests : 0;
+        
+        for (const p of Object.keys(data.summary || {})) {
+          if (p === 'total_requests') continue;
+          const models = data.summary[p].models || {};
+          let reqs = 0, mcount = Object.keys(models).length;
+          for(const m of Object.keys(models)){ reqs += (models[m].requests||0); }
+          
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${p}</td><td>${mcount}</td><td>${reqs}</td>`;
+          tbody.appendChild(tr);
+        }
+        document.getElementById('lastsync').textContent = `Total requests: ${total}`;
+        
+        // events
+        const ev = data.events || [];
+        document.getElementById('events').textContent = ev.slice().reverse().map(e => {
+            if(e.raw) return e.raw;
+            return `[${new Date(e.timestamp*1000).toLocaleTimeString()}] ${e.provider}/${e.model}: ${e.duration_s}s`;
+        }).join('\n');
+      } catch(err) {
+        document.getElementById('summary').textContent = 'Failed to load usage: ' + err;
+      }
+    }
+
+    function loadAll() {
+      loadPollers();
+      loadUsage();
+    }
+
+    // Initial load
+    loadAll();
+  </script>
+</body>
+</html>

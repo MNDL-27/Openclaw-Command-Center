@@ -1,0 +1,29 @@
+{
+  "hashnode_api_key": "a2dfb5a5-ef87-46bb-9bfb-2da89368ecee",
+  "hashnode_url": "https://nilasblog.hashnode.dev",
+  "publication_id": "698575fa7de63711646068b8",
+  "nilaTimeHour": 23,
+  "notes_path": "/home/protik/.openclaw/workspace/LEARNING_NOTES.md",
+  "rss_feeds": [
+    "https://nila.mndl.eu.org/rss.xml",
+    "https://nilasblog.hashnode.dev/rss.xml",
+    "https://nilasblog.hashnode.dev/rss"
+  ],
+  "providers": {
+    "OpenAI": { "api_key": null },
+    "Anthropic": { "api_key": null },
+    "MiniMax": { "api_key": null },
+    "Moonshot (Kimi K2.5)": { "api_key": null },
+    "Google": { "api_key": null },
+    "OpenRouter": { "api_key": null },
+    "Qwen": { "api_key": null },
+    "Z.AI (GLM 4.7)": { "api_key": null },
+    "Copilot": { "api_key": null },
+    "Vercel AI Gateway": { "api_key": null },
+    "OpenCode Zen": { "api_key": null },
+    "Xiaomi": { "api_key": null },
+    "Synthetic": { "api_key": null },
+    "Venice AI": { "api_key": null },
+    "Cloudflare AI Gateway": { "api_key": null }
+  }
+}
